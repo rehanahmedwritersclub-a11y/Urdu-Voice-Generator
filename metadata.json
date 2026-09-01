@@ -1,0 +1,6 @@
+{
+  "name": "Urdu Script Voice Studio",
+  "description": "Text-to-speech studio for reading YouTube video scripts in Urdu with customizable moods, tone presets, speed, and pitch controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
