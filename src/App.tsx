@@ -127,12 +127,36 @@ export default function App() {
         }),
       });
 
+      if (!response.ok) {
+        let errorMsg = `Server error (${response.status})`;
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const errData = await response.json();
+            if (errData.requiresApiKey) {
+              throw new Error('ElevenLabs API Key required! "Enter ElevenLabs API Key" button par click kar ke apni key paste karein.');
+            }
+            errorMsg = errData.error || errorMsg;
+          } else {
+            const rawText = await response.text();
+            if (rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+              errorMsg = `Server returned an HTML page (${response.status}) instead of JSON. The Node.js server might not be running or the /api endpoint is not routed.`;
+            } else if (rawText) {
+              errorMsg = rawText.slice(0, 150);
+            }
+          }
+        } catch (subErr: any) {
+          if (subErr.message && subErr.message.includes('ElevenLabs')) {
+            throw subErr;
+          }
+          // fallback to errorMsg
+        }
+        throw new Error(errorMsg);
+      }
+
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        if (data.requiresApiKey) {
-          throw new Error('ElevenLabs API Key required! "Enter ElevenLabs API Key" button par click kar ke apni key paste karein.');
-        }
+      if (!data.success) {
         throw new Error(data.error || 'Failed to generate Urdu audio voiceover.');
       }
 

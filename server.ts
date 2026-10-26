@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Modality } from '@google/genai';
 import dotenv from 'dotenv';
@@ -124,7 +125,7 @@ export const TONE_PRESETS: TonePreset[] = [
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '50mb' }));
 
@@ -461,6 +462,11 @@ Lekin agar aap sirf 3 aasan aadatein apna lein, toh aapki focus aur energy 2 gun
     res.json({ samples });
   });
 
+  // Catch-all for undefined /api routes so they always return JSON, not HTML
+  app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl}` });
+  });
+
   // Vite integration
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -469,10 +475,22 @@ Lekin agar aap sirf 3 aasan aadatein apna lein, toh aapki focus aur energy 2 gun
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const candidatePaths = [
+      path.join(process.cwd(), 'dist'),
+      path.join(__dirname, '..', 'dist'),
+      path.join(__dirname),
+      process.cwd(),
+    ];
+    const distPath = candidatePaths.find((p) => fs.existsSync(path.join(p, 'index.html'))) || path.join(process.cwd(), 'dist');
+
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send('Application build (dist/index.html) not found. Please run npm run build.');
+      }
     });
   }
 

@@ -47,7 +47,20 @@ export const ScriptAnalysisModal: React.FC<ScriptAnalysisModalProps> = ({
       });
 
       if (!res.ok) {
-        throw new Error('Analysis failed');
+        let msg = `Analysis failed (${res.status})`;
+        try {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const errData = await res.json();
+            msg = errData.error || msg;
+          } else {
+            const txt = await res.text();
+            if (txt.includes('<!DOCTYPE') || txt.includes('<html')) {
+              msg = `Server returned an HTML page (${res.status}) instead of JSON. Check backend server.`;
+            }
+          }
+        } catch {}
+        throw new Error(msg);
       }
 
       const data = await res.json();
