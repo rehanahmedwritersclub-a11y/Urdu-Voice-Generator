@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Modality } from '@google/genai';
 import dotenv from 'dotenv';
 
@@ -469,6 +468,7 @@ Lekin agar aap sirf 3 aasan aadatein apna lein, toh aapki focus aur energy 2 gun
 
   // Vite integration
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
